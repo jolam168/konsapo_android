@@ -14,6 +14,8 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.SparseArray;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -55,14 +57,9 @@ public class HomeActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
     private CustomTabLayout tabLayout;
+    private List<String> urls = new ArrayList<String>();
+    private int currentPage = 0;
 
-//    private int[] tabIcons = {
-//            R.drawable.ic_action_home,
-//            R.drawable.ic_action_search,
-//            R.drawable.ic_action_new,
-//            R.drawable.ic_action_bookmark,
-//            R.drawable.ic_action_message
-//    };
     private int[] tabIcons = {
             R.drawable.ic_action_home,
             R.drawable.ic_action_search,
@@ -81,12 +78,10 @@ public class HomeActivity extends AppCompatActivity {
         getSupportActionBar().hide();
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
-        List<String> urls = new ArrayList<String>();
+
         urls.add("https://konkatsu10.com/");
         urls.add("https://konkatsu10.com/index.php?app_controller=search&type=mid&run=true");
         urls.add("https://konkatsu10.com/index.php?app_controller=search&type=news&run=true&category=news&category_PAL[]=match%20comp");
-//        urls.add("https://konkatsu10.com/index.php?app_controller=search&type=clip&run=true&pal=mid");
-//        urls.add("https://konkatsu10.com/index.php?app_controller=search&type=message&run=true&pal=rec");
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(),urls);
 
@@ -96,6 +91,26 @@ public class HomeActivity extends AppCompatActivity {
         mViewPager.setOffscreenPageLimit(3);
         tabLayout = (CustomTabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+        tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager) {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                Log.d("debug","Tab Selected");
+                currentPage = tab.getPosition();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                Log.d("debug","Tab UnSelected");
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                Log.d("debug","Tab ReSelected");
+                PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
+                f.webView.loadUrl(urls.get(tab.getPosition()));
+
+            }
+        });
         setupTabIcons();
 
     }
@@ -114,6 +129,25 @@ public class HomeActivity extends AppCompatActivity {
 
 
     }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_BACK:
+                    PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(currentPage);
+                    if (f.webView.canGoBack()) {
+                        f.webView.goBack();
+                    } else {
+                        finish();
+                    }
+                    return true;
+            }
+
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -168,10 +202,9 @@ public class HomeActivity extends AppCompatActivity {
             return fragment;
         }
 
+
         @Override
         public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-//            setContentView(rootView);
-//            setContentShown(false);
             super.onActivityCreated(savedInstanceState);
         }
 
@@ -230,6 +263,7 @@ public class HomeActivity extends AppCompatActivity {
 
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+
                     CookieManager cookieManager = CookieManager.getInstance();
                     String cookies = cookieManager.getCookie(mUrl);
                     SharedPreferences settings = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -268,7 +302,11 @@ public class HomeActivity extends AppCompatActivity {
 
 
             return rootView;
+
+
         }
+
+
     }
 
     /**
@@ -278,11 +316,18 @@ public class HomeActivity extends AppCompatActivity {
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         private List<String> mDatas;
-
+        SparseArray<Fragment> registeredFragments = new SparseArray<>();
 
         public SectionsPagerAdapter(FragmentManager fm, List<String> datas) {
             super(fm);
             this.mDatas = datas;
+        }
+
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            Fragment fragment = (Fragment) super.instantiateItem(container, position);
+            registeredFragments.put(position, fragment);
+            return fragment;
         }
 
         @Override
@@ -300,73 +345,34 @@ public class HomeActivity extends AppCompatActivity {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
             String url = mDatas.get(position);
-//            PlaceholderFragment fm = new PlaceholderFragment(url);
             return PlaceholderFragment.newInstance(url);
         }
 
         @Override
         public int getCount() {
-            // Show 5 total pages.
+
             return tabIcons.length;
         }
 
         @Override
         public void destroyItem(ViewGroup container, int position, Object object) {
+            registeredFragments.remove(position);
             super.destroyItem(container, position, object);
         }
 
         @Override
         public CharSequence getPageTitle(int position) {
-//            switch (position) {
-//                case 0:
-//                    return "ホーム";
-//                case 1:
-//                    return "検索";
-//                case 2:
-//                    return "新着";
-//                case 3:
-//                    return "お気に入り";
-//                case 4:
-//                    return "お知らせ";
-//
-//            }
+
             return null;
         }
 
-
+        public Fragment getRegisteredFragment(int position) {
+            return registeredFragments.get(position);
+        }
 
 
     }
 
-
-
-    public class CustomWebViewClient extends WebViewClient{
-
-        private String url = "";
-        private Context context;
-
-        public CustomWebViewClient(String url,Context context) {
-            super();
-            this.url = url;
-            this.context = context;
-        }
-
-        @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            super.onPageStarted(view, url, favicon);
-        }
-
-        @Override
-        public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
-        }
-
-        @Override
-        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-            return super.shouldOverrideUrlLoading(view, request);
-
-        }
-    }
 
 
 }
