@@ -2,9 +2,13 @@ package com.hasuka.konsapo;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -19,12 +23,14 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieSyncManager;
 import android.webkit.HttpAuthHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
 import android.webkit.WebViewClient;
@@ -80,7 +86,7 @@ public class HomeActivity extends AppCompatActivity {
         // primary sections of the activity.
 
         urls.add("https://konkatsu10.com/");
-        urls.add("https://konkatsu10.com/index.php?app_controller=search&type=mid&run=true");
+        urls.add("https://konkatsu10.com/index.php?app_controller=search&type=mid&run=true&category=&category_PAL[]=match+or#search");
         urls.add("https://konkatsu10.com/index.php?app_controller=search&type=news&run=true&category=news&category_PAL[]=match%20comp");
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(),urls);
@@ -96,6 +102,10 @@ public class HomeActivity extends AppCompatActivity {
             public void onTabSelected(TabLayout.Tab tab) {
                 Log.d("debug","Tab Selected");
                 currentPage = tab.getPosition();
+
+                PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
+                f.webView.reload();
+
             }
 
             @Override
@@ -139,7 +149,11 @@ public class HomeActivity extends AppCompatActivity {
                     if (f.webView.canGoBack()) {
                         f.webView.goBack();
                     } else {
-                        finish();
+                        if (currentPage>0){
+                            mViewPager.setCurrentItem(0);
+                        }else {
+                            finish();
+                        }
                     }
                     return true;
             }
@@ -222,7 +236,6 @@ public class HomeActivity extends AppCompatActivity {
             mUrl = getArguments().getString(ARG_SECTION_URL);
             CookieManager cookieManager = CookieManager.getInstance();
             cookieManager.setAcceptCookie(true);
-            cookieManager.acceptCookie();
             cookieManager.setAcceptFileSchemeCookies(true);
 
             SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -244,6 +257,20 @@ public class HomeActivity extends AppCompatActivity {
                 }
             });
             webView.setLongClickable(false);
+//            webView.setOnTouchListener(new View.OnTouchListener() {
+//
+//                public boolean onTouch(View v, MotionEvent event) {
+//                    return (event.getAction() == MotionEvent.ACTION_MOVE);
+//                }
+//            });
+
+            WebSettings webSettings = webView.getSettings();
+            webSettings.setSupportMultipleWindows(true);
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setSupportZoom(false);
+            webSettings.setBuiltInZoomControls(false);
+            webSettings.setUseWideViewPort(false);
+            webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
 
             webView.setWebChromeClient(new WebChromeClient(){
                 @Override
@@ -256,6 +283,15 @@ public class HomeActivity extends AppCompatActivity {
                         progressBar.setProgress(newProgress);
                     }
                 }
+
+                @Override
+                public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+
+                    ((WebView.WebViewTransport) resultMsg.obj).setWebView(new WebView(view.getContext()));
+                    resultMsg.sendToTarget();
+
+                    return true;
+                }
             });
 
             webView.setWebViewClient(new WebViewClient(){
@@ -264,24 +300,40 @@ public class HomeActivity extends AppCompatActivity {
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
 
-                    CookieManager cookieManager = CookieManager.getInstance();
-                    String cookies = cookieManager.getCookie(mUrl);
-                    SharedPreferences settings = getActivity().getPreferences(Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = settings.edit();
-                    editor.putString("cookies",cookies);
-                    editor.commit();
+                    saveCookies();
                     return false;
                 }
 
+//                @Override
+//                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+//                    CookieManager cookieManager = CookieManager.getInstance();
+//                    String cookies = cookieManager.getCookie(url);
+//                    SharedPreferences settings = getActivity().getPreferences(Context.MODE_PRIVATE);
+//                    SharedPreferences.Editor editor = settings.edit();
+//                    editor.putString("cookies", cookies);
+//                    editor.commit();
+//                    if (url.startsWith("newtab:")) {
+//
+//                        Log.d("debug","newtab");
+//                    }else{
+//                        view.loadUrl(url);
+//                    }
+//                    return true;
+//                }
+
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
+
+
                     super.onPageStarted(view, url, favicon);
 
                 }
 
                 @Override
                 public void onPageFinished(WebView view, String url) {
-                    super.onPageFinished(view, url);
+//                    if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
+//                        view.loadUrl("javascript: var allLinks = document.getElementsByTagName('a'); if (allLinks) {var i;for (i=0; i<allLinks.length; i++) {var link = allLinks[i];var target = link.getAttribute('target'); if (target && target == '_blank') {link.setAttribute('target','_self');link.href = 'newtab:'+link.href;}}}");
+//                    }
                 }
 
                 @Override
@@ -290,13 +342,7 @@ public class HomeActivity extends AppCompatActivity {
                     super.onReceivedHttpAuthRequest(view, handler, host, realm);
                 }
             });
-            WebSettings webSettings = webView.getSettings();
-            webSettings.setJavaScriptEnabled(true);
-            webSettings.setSupportZoom(false);
-            webSettings.setBuiltInZoomControls(false);
-            webSettings.setUseWideViewPort(false);
-            webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-//            webSettings.setLoadWithOverviewMode(true);
+
             webView.setHorizontalScrollBarEnabled(false);
             webView.loadUrl(mUrl);
 
@@ -304,6 +350,37 @@ public class HomeActivity extends AppCompatActivity {
             return rootView;
 
 
+        }
+
+        @Override
+        public void onResume() {
+            loadCookies();
+            super.onResume();
+        }
+
+        @Override
+        public void onPause() {
+            saveCookies();
+            super.onPause();
+        }
+
+        private void loadCookies(){
+            SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+            CookieManager cookieManager = CookieManager.getInstance();
+            String cookiesValue = "";
+            sharedPref.getString("cookies",cookiesValue);
+            if (cookiesValue.length()>0){
+                cookieManager.setCookie(webView.getUrl(),cookiesValue);
+            }
+        }
+
+        private void saveCookies(){
+            CookieManager cookieManager = CookieManager.getInstance();
+            String cookies = cookieManager.getCookie(mUrl);
+            SharedPreferences settings = getActivity().getPreferences(Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = settings.edit();
+            editor.putString("cookies",cookies);
+            editor.commit();
         }
 
 
