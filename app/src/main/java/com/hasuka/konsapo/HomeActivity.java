@@ -42,8 +42,10 @@ import com.crashlytics.android.Crashlytics;
 
 import io.fabric.sdk.android.Fabric;
 
-import java.net.HttpCookie;
+
 import java.util.*;
+
+
 public class HomeActivity extends AppCompatActivity {
 
     /**
@@ -122,7 +124,36 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
         setupTabIcons();
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptFileSchemeCookies(true);
 
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String cookiesValue = "";
+        sharedPref.getString("cookies",cookiesValue);
+        if (cookiesValue.length()>0){
+            cookieManager.setCookie("konkatsu10.com",cookiesValue);
+        }else{
+            cookieManager.getCookie("konkatsu10.com");
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        saveCookies();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        saveCookies();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        saveCookies();
     }
 
     private void setupTabIcons() {
@@ -234,18 +265,6 @@ public class HomeActivity extends AppCompatActivity {
             progressBar.setMax(100);
 
             mUrl = getArguments().getString(ARG_SECTION_URL);
-            CookieManager cookieManager = CookieManager.getInstance();
-            cookieManager.setAcceptCookie(true);
-            cookieManager.setAcceptFileSchemeCookies(true);
-
-            SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
-            String cookiesValue = "";
-            sharedPref.getString("cookies",cookiesValue);
-            if (cookiesValue.length()>0){
-                cookieManager.setCookie(mUrl,cookiesValue);
-            }else{
-                cookieManager.getCookie(mUrl);
-            }
 
 
 
@@ -271,7 +290,6 @@ public class HomeActivity extends AppCompatActivity {
             webSettings.setBuiltInZoomControls(false);
             webSettings.setUseWideViewPort(false);
             webSettings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
-
             webView.setWebChromeClient(new WebChromeClient(){
                 @Override
                 public void onProgressChanged(WebView view, int newProgress) {
@@ -299,8 +317,9 @@ public class HomeActivity extends AppCompatActivity {
 
                 @Override
                 public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-
                     saveCookies();
+
+
                     return false;
                 }
 
@@ -334,6 +353,8 @@ public class HomeActivity extends AppCompatActivity {
 //                    if(Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT) {
 //                        view.loadUrl("javascript: var allLinks = document.getElementsByTagName('a'); if (allLinks) {var i;for (i=0; i<allLinks.length; i++) {var link = allLinks[i];var target = link.getAttribute('target'); if (target && target == '_blank') {link.setAttribute('target','_self');link.href = 'newtab:'+link.href;}}}");
 //                    }
+                    if (android.os.Build.VERSION.SDK_INT >= 21) CookieManager.getInstance().flush();
+                    else CookieSyncManager.getInstance().sync();
                 }
 
                 @Override
@@ -352,17 +373,7 @@ public class HomeActivity extends AppCompatActivity {
 
         }
 
-        @Override
-        public void onResume() {
-            loadCookies();
-            super.onResume();
-        }
 
-        @Override
-        public void onPause() {
-            saveCookies();
-            super.onPause();
-        }
 
         private void loadCookies(){
             SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
@@ -376,12 +387,14 @@ public class HomeActivity extends AppCompatActivity {
 
         private void saveCookies(){
             CookieManager cookieManager = CookieManager.getInstance();
-            String cookies = cookieManager.getCookie(mUrl);
+            String cookies = cookieManager.getCookie("konkatsu10.com");
             SharedPreferences settings = getActivity().getPreferences(Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = settings.edit();
+            editor.clear();
             editor.putString("cookies",cookies);
-            editor.commit();
+            editor.apply();
         }
+
 
 
     }
@@ -451,5 +464,28 @@ public class HomeActivity extends AppCompatActivity {
     }
 
 
+    private void loadCookies(){
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptFileSchemeCookies(true);
 
+        SharedPreferences sharedPref = this.getPreferences(Context.MODE_PRIVATE);
+        String cookiesValue = "";
+        sharedPref.getString("cookies",cookiesValue);
+        if (cookiesValue.length()>0){
+            cookieManager.setCookie("konkatsu10.com",cookiesValue);
+        }else{
+            cookieManager.getCookie("konkatsu10.com");
+        }
+    }
+
+    private void saveCookies(){
+        CookieManager cookieManager = CookieManager.getInstance();
+        String cookies = cookieManager.getCookie("konkatsu10.com");
+        SharedPreferences settings = this.getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.clear();
+        editor.putString("cookies",cookies);
+        editor.apply();
+    }
 }
