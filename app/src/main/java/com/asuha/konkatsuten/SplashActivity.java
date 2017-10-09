@@ -1,4 +1,4 @@
-package com.hasuka.konsapo;
+package com.asuha.konkatsuten;
 
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;

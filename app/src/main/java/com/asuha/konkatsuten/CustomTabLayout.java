@@ -1,11 +1,8 @@
-package com.hasuka.konsapo;
+package com.asuha.konkatsuten;
 
-import android.app.Activity;
 import android.support.design.widget.TabLayout;
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.view.ViewGroup;
 
 import java.lang.reflect.Field;
 

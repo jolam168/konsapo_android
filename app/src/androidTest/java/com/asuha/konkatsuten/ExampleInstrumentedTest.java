@@ -1,4 +1,4 @@
-package com.hasuka.konsapo;
+package com.asuha.konkatsuten;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

@@ -8,8 +8,8 @@ android {
     compileSdkVersion 26
     buildToolsVersion "26.0.1"
     defaultConfig {
-        applicationId "com.hasuka.konsapo"
-        minSdkVersion 16
+        applicationId "com.asuha.konkatsuten"
+        minSdkVersion 18
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"

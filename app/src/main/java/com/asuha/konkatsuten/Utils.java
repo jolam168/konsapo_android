@@ -1,4 +1,4 @@
-package com.hasuka.konsapo;
+package com.asuha.konkatsuten;
 
 /**
  * Created by lamyiucho on 13/9/2017.
