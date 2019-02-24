@@ -27,3 +27,7 @@ lane :beta do
   #   slack_url: "https://hooks.slack.com/services/IDS"
   # )
 end
+
+lane :staging do
+  puts Dir.glob("../*").max_by {|f| File.mtime(f)} 
+end

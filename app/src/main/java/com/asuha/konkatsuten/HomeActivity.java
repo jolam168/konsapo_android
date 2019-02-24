@@ -1,9 +1,11 @@
 package com.asuha.konkatsuten;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TabLayout;
@@ -11,6 +13,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -32,7 +35,11 @@ import android.webkit.CookieManager;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+
+import com.asuha.konkatsuten.dummy.DummyContent;
+import com.asuha.konkatsuten.dummy.NoticeListContent;
 import com.crashlytics.android.Crashlytics;
+import com.thefinestartist.finestwebview.FinestWebView;
 
 import io.fabric.sdk.android.Fabric;
 
@@ -40,7 +47,8 @@ import io.fabric.sdk.android.Fabric;
 import java.util.*;
 
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity implements ItemFragment.OnListFragmentInteractionListener
+{
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -52,7 +60,7 @@ public class HomeActivity extends AppCompatActivity {
      */
     private SectionsPagerAdapter mSectionsPagerAdapter;
 //    private int[] tabTitles = {R.string.tab_home,R.string.tab_search,R.string.tab_new,R.string.tab_bookmark,R.string.tab_message};
-    private int[] tabTitles = {R.string.tab_home,R.string.tab_search,R.string.tab_new};
+    private int[] tabTitles = {R.string.tab_home,R.string.tab_search,R.string.tab_new,R.string.tab_notice};
 
     /**
      * The {@link ViewPager} that will host the section contents.
@@ -65,7 +73,8 @@ public class HomeActivity extends AppCompatActivity {
     private int[] tabIcons = {
             R.drawable.ic_action_home,
             R.drawable.ic_action_search,
-            R.drawable.ic_action_new
+            R.drawable.ic_action_new,
+            R.drawable.ic_action_notice
     };
 
 
@@ -84,24 +93,24 @@ public class HomeActivity extends AppCompatActivity {
         urls.add("https://konkatsu10.com/");
         urls.add("https://konkatsu10.com/index.php?app_controller=search&type=mid&run=true&category=&category_PAL[]=match+or#search");
         urls.add("https://konkatsu10.com/index.php?app_controller=search&type=news&run=true&category=news&category_PAL[]=match%20comp");
-
+        urls.add("");
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(),urls);
 
         // Set up the ViewPager with the sections adapter.
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
-        mViewPager.setOffscreenPageLimit(3);
+        mViewPager.setOffscreenPageLimit(4);
         tabLayout = (CustomTabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager) {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
-                Log.d("debug","Tab Selected");
+                Log.d("debug", "Tab Selected");
                 currentPage = tab.getPosition();
-
-                PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
-                f.webView.reload();
-
+                    if (currentPage < 3) {
+                        PlaceholderFragment f = (PlaceholderFragment) mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
+                        f.webView.reload();
+                }
             }
 
             @Override
@@ -112,9 +121,10 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
                 Log.d("debug","Tab ReSelected");
-                PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
-                f.webView.loadUrl(urls.get(tab.getPosition()));
-
+                if(tab.getPosition() < 3) {
+                    PlaceholderFragment f = (PlaceholderFragment) mSectionsPagerAdapter.getRegisteredFragment(tab.getPosition());
+                    f.webView.loadUrl(urls.get(tab.getPosition()));
+                }
             }
         });
         setupTabIcons();
@@ -130,6 +140,21 @@ public class HomeActivity extends AppCompatActivity {
         }else{
             cookieManager.getCookie("konkatsu10.com");
         }
+
+    }
+
+
+
+    @Override
+    public void onListFragmentInteraction(NoticeListContent.NoticeItem item) {
+        new FinestWebView.Builder(this).titleDefault(getString(R.string.title_notice)).backPressToClose(true).show(item.url);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+
     }
 
     @Override
@@ -152,7 +177,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupTabIcons() {
 
-        for(int i = 0; i < 3;i++){
+        for(int i = 0; i < 4;i++){
             LinearLayout tabLinearLayout = (LinearLayout) LayoutInflater.from(this).inflate(R.layout.custom_tab, null);
             TextView tabContent = (TextView) tabLinearLayout.findViewById(R.id.tabContent);
             tabContent.setText("  "+getApplicationContext().getResources().getString(tabTitles[i]));
@@ -170,19 +195,24 @@ public class HomeActivity extends AppCompatActivity {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             switch (keyCode) {
                 case KeyEvent.KEYCODE_BACK:
-                    PlaceholderFragment f = (PlaceholderFragment)mSectionsPagerAdapter.getRegisteredFragment(currentPage);
-                    if (f.webView.canGoBack()) {
-                        f.webView.goBack();
-                    } else {
-                        if (currentPage>0){
-                            mViewPager.setCurrentItem(0);
-                        }else {
-                            finish();
+                    if (currentPage < 3) {
+                        PlaceholderFragment f = (PlaceholderFragment) mSectionsPagerAdapter.getRegisteredFragment(currentPage);
+                        if (f.webView.canGoBack()) {
+                            f.webView.goBack();
+                        } else {
+                            if (currentPage > 0) {
+                                mViewPager.setCurrentItem(0);
+                            } else {
+                                finish();
+                            }
                         }
+
+                    }else{
+                        mViewPager.setCurrentItem(0);
+
                     }
                     return true;
             }
-
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -428,8 +458,18 @@ public class HomeActivity extends AppCompatActivity {
         public Fragment getItem(int position) {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
-            String url = mDatas.get(position);
+//            String url = mDatas.get(position);
+//            return PlaceholderFragment.newInstance(url);
+            switch (position){
+                case 0:
+                case 1:
+                case 2: String url = mDatas.get(position);
             return PlaceholderFragment.newInstance(url);
+
+                case 3:
+                    return ItemFragment.newInstance(0);
+            }
+            return null;
         }
 
         @Override

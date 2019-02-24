@@ -15,15 +15,20 @@
     <string name="title_activity_fullscreen2">FullscreenActivity</string>
     <string name="title_activity_main">MainActivity</string>
 
+    <string name="title_notice">お知らせ</string>
+    <string name="title_no_notice">お知らせはありません</string>
     <string name="tab_home">ホーム</string>
     <string name="tab_search">検索</string>
     <string name="tab_new">新着</string>
     <string name="tab_bookmark">お気に入り</string>
-    <string name="tab_message">お知らせ</string>
+    <string name="tab_notice">お知らせ</string>
 
     <string name="USERNAME">asuha</string>
     <string name="PASSWORD">asuha0602</string>
+
     <string name="title_activity_splash_screen">SplashScreen</string>
 
     <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_web">WebActivity</string>
+    <string name="title_activity_new_main">NewMainActivity</string>
 </resources>

@@ -2,20 +2,30 @@ apply plugin: 'com.android.application'
 apply plugin: 'io.fabric'
 
 repositories {
-    maven { url 'https://maven.fabric.io/public' }
+    maven { url 'https://maven.google.com' }
+    jcenter()
 }
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion 27
+    buildToolsVersion "27.0.2"
     defaultConfig {
+        multiDexEnabled true
         applicationId "com.asuha.konkatsuten"
         minSdkVersion 18
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [onesignal_app_id               : "d5f14639-242c-421a-bc5f-76bf2841601e",
+                                // Project number pulled from dashboard, local value is ignored.
+                                onesignal_google_project_number: "REMOTE"]
     }
     buildTypes {
+
+        debug{
+
+        }
+
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -26,6 +36,7 @@ android {
 buildscript {
     repositories {
         maven { url 'https://maven.fabric.io/public' }
+        jcenter()
     }
 
     dependencies {
@@ -47,10 +58,19 @@ dependencies {
         transitive = true;
     }
 
-    compile 'com.android.support:appcompat-v7:26.+'
+
+    compile 'com.android.support:appcompat-v7:27.1.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.android.support:support-v4:26.+'
-    compile 'com.android.support:design:26.+'
+    compile 'com.android.support:support-v4:27.1.+'
+    compile 'com.android.support:design:27.+'
     compile 'com.github.johnkil.android-progressfragment:progressfragment:1.4.+'
+    compile 'com.onesignal:OneSignal:[3.6.2, 3.99.99]'
+    compile 'com.android.support:recyclerview-v7:27.1.+'
+    compile 'com.android.volley:volley:1.0.0'
+    compile 'com.yqritc:recyclerview-flexibledivider:1.4.0'
+    compile 'com.dinuscxj:recyclerrefreshlayout:2.0.5'
+    compile 'com.thefinestartist:finestwebview:1.2.7'
+    compile 'com.android.support:multidex:1.0.3'
+
     testCompile 'junit:junit:4.12'
 }
